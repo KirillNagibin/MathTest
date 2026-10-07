@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Входная диагностика по математике (база 9 класса, 10 класс)</title>
+    <title>Входная диагностика по математике (9 класс)</title>
     
     <script>
         MathJax = {
@@ -78,7 +78,7 @@
 
     <div class="container">
         <div id="view-welcome" class="view active">
-            <h1>Входная диагностика: Математика 10 класс</h1>
+            <h1>Входная диагностика: Математика 9 класс</h1>
             <button class="btn" id="start-btn" onclick="app.startTest()" disabled>Загрузка системы...</button>
         </div>
 
@@ -98,7 +98,7 @@
             <div id="review-container"></div>
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center;">
                 <h3>Что делать с этими результатами?</h3>
-                <p>Десятый класс — важный этап перед подготовкой к ЕГЭ. Если тест выявил пробелы, их необходимо закрыть в ближайшее время.</p>
+                <p>Если тест выявил пробелы, их необходимо закрыть в ближайшее время.</p>
                 <button class="btn" onclick="window.open('https://t.me/kirillnagibin', '_blank')">Записаться на разбор</button>
             </div>
         </div>
@@ -417,10 +417,10 @@
                 document.getElementById('review-container').innerHTML = reviewHtml;
                 
                 const msg = document.getElementById('score-message');
-                if (score === TEST_DATA.length) msg.innerText = "Отличный результат! База 9 класса усвоена полностью. Можно уверенно начинать 10 класс.";
-                else if (score >= 8) msg.innerText = "Хороший уровень, но есть темы, требующие повторения перед началом 10 класса.";
-                else if (score >= 6) msg.innerText = "Средний результат. Есть пробелы в понимании ключевых тем 9 класса.";
-                else msg.innerText = "Значительное количество ошибок. Требуется систематическое повторение программы 5–9 классов.";
+                if (score === TEST_DATA.length) msg.innerText = "Отличный результат! База для 9 класса усвоена полностью.";
+                else if (score >= 8) msg.innerText = "Хороший уровень, но есть темы, требующие повторения перед началом 9 класса.";
+                else if (score >= 6) msg.innerText = "Средний результат. Есть пробелы в понимании ключевых тем 5-8 классов.";
+                else msg.innerText = "Значительное количество ошибок. Требуется систематическое повторение программы 5–8 классов.";
 
                 resultData.score = score;
                 resultData.maxScore = TEST_DATA.length;

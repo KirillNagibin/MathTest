@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Входная диагностика по математике (база 9 класса, 10 класс)</title>
+    
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --border-color: #333;
+            --text-main: #ffffff;
+            --text-muted: #b0b0b0;
+            --accent: #4CAF50;
+            --accent-hover: #45a049;
+            --error: #EF4444;
+            --success: #22C55E;
+        }
+        body, html {
+            margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+        }
+        .container {
+            width: 100%; max-width: 800px; margin: 40px 20px;
+            background-color: var(--surface-color); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 40px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .view { display: none; }
+        .view.active { display: block; }
+        h1, h2, h3 { margin-top: 0; color: var(--text-main); }
+        p { color: var(--text-muted); line-height: 1.6; }
+        .btn {
+            background-color: var(--accent); color: #fff; border: none; padding: 12px 24px; border-radius: 6px; 
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; margin-top: 20px;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .question-block { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .question-block:last-child { border-bottom: none; }
+        .q-text { font-size: 1.1rem; font-weight: 500; margin-bottom: 15px; line-height: 1.5; }
+        .option-label {
+            display: flex; align-items: center; padding: 10px 15px; background-color: rgba(255,255,255,0.03); 
+            border: 1px solid transparent; border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .option-label:hover { background-color: rgba(255,255,255,0.08); border-color: var(--border-color); }
+        .option-label input { margin-right: 12px; cursor: pointer; }
+        .input-answer {
+            background-color: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color);
+            padding: 10px 15px; border-radius: 6px; width: 100%; max-width: 300px; font-size: 1rem;
+        }
+        .input-answer:focus { outline: none; border-color: var(--accent); }
+        .result-summary { text-align: center; padding: 30px; background-color: rgba(76, 175, 80, 0.1); border-radius: 8px; margin-bottom: 30px; }
+        .score { font-size: 3rem; font-weight: bold; color: var(--accent); margin: 10px 0; }
+        .review-item { margin-bottom: 20px; padding: 15px; border-radius: 8px; background-color: rgba(255,255,255,0.02); border-left: 4px solid transparent; }
+        .review-item.correct { border-left-color: var(--success); }
+        .review-item.incorrect { border-left-color: var(--error); }
+        .review-status { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+        .review-status.correct-text { color: var(--success); }
+        .review-status.incorrect-text { color: var(--error); }
+        mjx-container[jax="SVG"] { color: inherit !important; }
+        @media (max-width: 600px) {
+            .match-row { flex-direction: column; align-items: flex-start; }
+            .match-select { width: 100%; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="view-welcome" class="view active">
+            <h1>Входная диагностика: Математика 10 класс</h1>
+            <button class="btn" id="start-btn" onclick="app.startTest()" disabled>Загрузка системы...</button>
+        </div>
+
+        <div id="view-test" class="view">
+            <h2>Блок заданий</h2>
+            <div id="questions-container"></div>
+            <button class="btn" onclick="app.submitTest()" id="submit-btn">Завершить и проверить</button>
+        </div>
+
+        <div id="view-result" class="view">
+            <div class="result-summary">
+                <h2>Ваши результаты</h2>
+                <div class="score"><span id="score-val">0</span> / <span id="score-max">0</span></div>
+                <p id="score-message"></p>
+            </div>
+            <h3>Детальный анализ ответов</h3>
+            <div id="review-container"></div>
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center;">
+                <h3>Что делать с этими результатами?</h3>
+                <p>Десятый класс — важный этап перед подготовкой к ЕГЭ. Если тест выявил пробелы, их необходимо закрыть в ближайшее время.</p>
+                <button class="btn" onclick="window.open('https://t.me/kirillnagibin', '_blank')">Записаться на разбор</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        let auth = null;
+        window.db = null;
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        window.firebaseAddDoc = addDoc;
+        window.firebaseCollection = collection;
+
+        const localFirebaseConfig = {
+            apiKey: "AIzaSyAbJMWosjDnD53WXjHr9a8arKFtqwQsxwk",
+            authDomain: "physicsdiagnostics.firebaseapp.com",
+            projectId: "physicsdiagnostics",
+            storageBucket: "physicsdiagnostics.firebasestorage.app",
+            messagingSenderId: "284468879109",
+            appId: "1:284468879109:web:58ac30ac5cb3297aaa616c"
+        };
+
+        try {
+            if (Object.keys(localFirebaseConfig).length > 0) {
+                const appFirebase = initializeApp(localFirebaseConfig);
+                auth = getAuth(appFirebase);
+                window.db = getFirestore(appFirebase);
+            } else if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const appFirebase = initializeApp(firebaseConfig);
+                auth = getAuth(appFirebase);
+                window.db = getFirestore(appFirebase);
+            } else {
+                console.warn("Firebase конфигурация не найдена, работаем в автономном режиме.");
+            }
+        } catch (e) {
+            console.error("Ошибка инициализации Firebase:", e);
+        }
+
+        const initAuth = async () => {
+            try {
+                if (auth) {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                }
+                const startBtn = document.getElementById('start-btn');
+                if (startBtn) {
+                    startBtn.innerText = "Начать выполнение";
+                    startBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error("Ошибка аутентификации:", e);
+                const startBtn = document.getElementById('start-btn');
+                if (startBtn) {
+                    startBtn.innerText = "Ошибка подключения";
+                }
+            }
+        };
+        initAuth();
+    </script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const btn = document.getElementById('start-btn');
+                if (btn && btn.disabled) {
+                    btn.innerText = "Начать выполнение (Автономный режим)";
+                    btn.disabled = false;
+                }
+            }, 2000);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('student') || 'Аноним';
+        const TEST_ID = 'math_grade10_entry';
+        const displayElem = document.getElementById('student-display');
+        if (displayElem) displayElem.innerText = studentId;
+
+        const TEST_DATA = [
+    { 
+        id: 'q1', 
+        type: 'input', 
+        text: 'Найдите значение выражения: $\\frac{2^5 \\cdot 3^3}{6^2}$. В ответ запишите целое число.', 
+        correct: ['24', '24.0']
+    },
+    { 
+        id: 'q2', 
+        type: 'single', 
+        text: 'Решите неравенство: $3(x - 2) \\le 5x + 4$. Какой промежуток является решением?', 
+        options: { 
+            a: '$x \\ge -5$', 
+            b: '$x \\le -5$', 
+            c: '$x \\ge 5$', 
+            d: '$x \\le 5$' 
+        }, 
+        correct: 'a'
+    },
+    { 
+        id: 'q3', 
+        type: 'multiple', 
+        text: 'Какие из следующих функций являются линейными? Выберите все верные варианты.', 
+        options: { 
+            a: '$y = -4x + 1$', 
+            b: '$y = x^2 - 3$', 
+            c: '$y = \\frac{6}{x}$', 
+            d: '$y = 2{,}5x$', 
+            e: '$y = \\sqrt{x}$' 
+        }, 
+        correct: ['a', 'd']
+    },
+    { 
+        id: 'q4', 
+        type: 'single', 
+        text: 'Катеты прямоугольного треугольника равны 9 и 12. Найдите гипотенузу.', 
+        options: { 
+            a: '$15$', 
+            b: '$21$', 
+            c: '$18$', 
+            d: '$20$' 
+        }, 
+        correct: 'a'
+    },
+    { 
+        id: 'q5', 
+        type: 'input', 
+        text: 'Решите уравнение: $x^2 - 7x + 12 = 0$. В ответ запишите больший из корней.', 
+        correct: ['4', '4.0']
+    },
+    { 
+        id: 'q6', 
+        type: 'input', 
+        text: 'Товар после скидки 15% стоит 1700 рублей. Сколько рублей стоил товар до скидки?', 
+        correct: ['2000', '2000.0', '2 000']
+    },
+    { 
+        id: 'q7', 
+        type: 'single', 
+        text: 'Найдите значение выражения: $\\sqrt{25} + \\sqrt{81} - \\sqrt{64}$', 
+        options: { 
+            a: '$6$', 
+            b: '$14$', 
+            c: '$-6$', 
+            d: '$22$' 
+        }, 
+        correct: 'a'
+    },
+    { 
+        id: 'q8', 
+        type: 'input', 
+        text: 'В случайном эксперименте бросают одну игральную кость. Найдите вероятность того, что выпадет число больше 4. В ответ запишите обыкновенную дробь в формате a/b.', 
+        correct: ['1/3', '1 / 3', '1/ 3', '1 /3']
+    },
+    { 
+        id: 'q9', 
+        type: 'single', 
+        text: 'Какое утверждение верно для функции $y = 3x - 6$?', 
+        options: { 
+            a: 'График пересекает ось OY в точке $(0; -6)$ и функция возрастает', 
+            b: 'График пересекает ось OY в точке $(0; 6)$ и функция убывает', 
+            c: 'График пересекает ось OY в точке $(-6; 0)$ и функция возрастает', 
+            d: 'График пересекает ось OY в точке $(0; -6)$ и функция убывает' 
+        }, 
+        correct: 'a'
+    },
+    { 
+        id: 'q10', 
+        type: 'input', 
+        text: 'Сумма двух чисел равна 15, а их разность равна 3. Найдите большее число.', 
+        correct: ['9', '9.0']
+    },
+    { 
+        id: 'q11', 
+        type: 'input', 
+        text: 'В треугольнике $ABC$ угол $C$ равен $90^\\circ$, $AC = 8$, $BC = 15$. Найдите $AB$.', 
+        correct: ['17', '17.0']
+    },
+    { 
+        id: 'q12', 
+        type: 'single', 
+        text: 'Какое свойство верно для ромба?', 
+        options: { 
+            a: 'Диагонали равны', 
+            b: 'Диагонали взаимно перпендикулярны', 
+            c: 'Все углы прямые', 
+            d: 'Противоположные стороны не параллельны' 
+        }, 
+        correct: 'b'
+    },
+    { 
+        id: 'q13', 
+        type: 'input', 
+        text: 'Упростите выражение: $(x - 4)(x + 4) - x^2$. В ответ запишите число.', 
+        correct: ['-16', '-16.0']
+    },
+    { 
+        id: 'q14', 
+        type: 'single', 
+        text: 'Функция задана формулой $y = -\\frac{8}{x}$. В каких координатных четвертях расположен её график?', 
+        options: { 
+            a: 'I и III', 
+            b: 'II и IV', 
+            c: 'I и II', 
+            d: 'III и IV' 
+        }, 
+        correct: 'b'
+    },
+    { 
+        id: 'q15', 
+        type: 'multiple', 
+        text: 'Какие из следующих утверждений верны? Выберите все верные варианты.', 
+        options: { 
+            a: 'Сумма углов треугольника равна $180^\\circ$', 
+            b: 'В любом треугольнике все углы равны', 
+            c: 'В равнобедренном треугольнике углы при основании равны', 
+            d: 'Площадь прямоугольного треугольника равна произведению его катетов' 
+        }, 
+        correct: ['a', 'c']
+    }
+];
+
+        window.app = {
+            switchView(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+                if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+                    window.MathJax.typesetPromise().catch(err => console.error(err));
+                }
+            },
+            startTest() {
+                this.renderQuestions();
+                this.switchView('view-test');
+                window.scrollTo(0, 0);
+            },
+            renderQuestions() {
+                const container = document.getElementById('questions-container');
+                let html = '';
+                TEST_DATA.forEach((q, index) => {
+                    html += `<div class="question-block"><div class="q-text">${index + 1}. ${q.text}</div>`;
+                    
+                    if (q.type === 'single') {
+                        for (const [key, val] of Object.entries(q.options)) {
+                            html += `<label class="option-label"><input type="radio" name="${q.id}" value="${key}">${val}</label>`;
+                        }
+                    } else if (q.type === 'multiple') {
+                        for (const [key, val] of Object.entries(q.options)) {
+                            html += `<label class="option-label"><input type="checkbox" name="${q.id}" value="${key}">${val}</label>`;
+                        }
+                    } else if (q.type === 'input') {
+                        html += `<input type="text" class="input-answer" name="${q.id}" placeholder="Введите ответ" autocomplete="off">`;
+                    }
+                    
+                    html += `</div>`;
+                });
+                container.innerHTML = html;
+            },
+            async submitTest() {
+                document.getElementById('submit-btn').disabled = true;
+                let score = 0;
+                let reviewHtml = '';
+                let errorNumbers = [];
+                let resultData = { studentId, testId: TEST_ID, timestamp: new Date().toISOString(), answers: [] };
+
+                TEST_DATA.forEach((q, index) => {
+                    let isCorrect = false, userAnswerText = '', correctAnswerText = '';
+                    const questionNum = index + 1;
+
+                    if (q.type === 'single') {
+                        const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+                        const val = selected ? selected.value : null;
+                        isCorrect = (val === q.correct);
+                        userAnswerText = val ? q.options[val] : 'Нет ответа';
+                        correctAnswerText = q.options[q.correct];
+                        resultData.answers.push({ q: q.id, val, isCorrect, userText: userAnswerText, correctText: correctAnswerText });
+                    } else if (q.type === 'multiple') {
+                        const selected = Array.from(document.querySelectorAll(`input[name="${q.id}"]:checked`)).map(cb => cb.value);
+                        isCorrect = (selected.length === q.correct.length) && selected.every(val => q.correct.includes(val));
+                        userAnswerText = selected.length > 0 ? selected.map(k => q.options[k]).join('; ') : 'Нет ответа';
+                        correctAnswerText = q.correct.map(k => q.options[k]).join('; ');
+                        resultData.answers.push({ q: q.id, val: selected, isCorrect, userText: userAnswerText, correctText: correctAnswerText });
+                    } else if (q.type === 'input') {
+                        const input = document.querySelector(`input[name="${q.id}"]`);
+                        const val = input ? input.value.trim().replace(/\s+/g, '') : '';
+                        const normalizedCorrect = q.correct.map(c => c.replace(/\s+/g, '').replace(',', '.').toLowerCase());
+                        const normalizedVal = val.replace(',', '.').toLowerCase();
+                        isCorrect = normalizedCorrect.some(c => c === normalizedVal);
+                        userAnswerText = val || 'Нет ответа';
+                        correctAnswerText = q.correct[0];
+                        resultData.answers.push({ q: q.id, val, isCorrect, userText: userAnswerText, correctText: correctAnswerText });
+                    }
+
+                    if (isCorrect) score++;
+                    else errorNumbers.push(questionNum);
+
+                    const statusClass = isCorrect ? 'correct' : 'incorrect';
+                    const statusText = isCorrect ? 'Верно' : 'Ошибка';
+                    
+                    reviewHtml += `
+                        <div class="review-item ${statusClass}">
+                            <div class="review-status ${statusClass}-text">${questionNum}. ${statusText}</div>
+                            <div style="margin-bottom: 10px;">${q.text}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">
+                                <div><b>Твой ответ:</b> ${userAnswerText}</div>
+                                ${!isCorrect ? `<div style="margin-top: 8px;"><b>Правильный ответ:</b> ${correctAnswerText}</div>` : ''}
+                            </div>
+                        </div>`;
+                });
+
+                document.getElementById('score-val').innerText = score;
+                document.getElementById('score-max').innerText = TEST_DATA.length;
+                document.getElementById('review-container').innerHTML = reviewHtml;
+                
+                const msg = document.getElementById('score-message');
+                if (score === TEST_DATA.length) msg.innerText = "Отличный результат! База 9 класса усвоена полностью. Можно уверенно начинать 10 класс.";
+                else if (score >= 8) msg.innerText = "Хороший уровень, но есть темы, требующие повторения перед началом 10 класса.";
+                else if (score >= 6) msg.innerText = "Средний результат. Есть пробелы в понимании ключевых тем 9 класса.";
+                else msg.innerText = "Значительное количество ошибок. Требуется систематическое повторение программы 5–9 классов.";
+
+                resultData.score = score;
+                resultData.maxScore = TEST_DATA.length;
+                resultData.errors = errorNumbers;
+                
+                if (window.db && window.firebaseAddDoc) {
+                    try {
+                        const path = window.firebaseCollection(window.db, "artifacts", window.appId, "public", "data", "diagnostic_results");
+                        await window.firebaseAddDoc(path, resultData);
+                    } catch(e) { console.error("Ошибка записи в базу:", e); }
+                }
+
+                this.switchView('view-result');
+                window.scrollTo(0, 0);
+            }
+        };
+    </script>
+</body>
+</html>
